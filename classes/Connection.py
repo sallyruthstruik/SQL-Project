@@ -15,9 +15,9 @@ class MyDatabase(connection.Connection):
         pass
     
     def getPathCursor(self):
-        self.myCursor.execute("select directory_path from File;")
+        self.myCursor.execute("select directory_path, pathlen from File order by pathlen;")
         for x in self.myCursor.fetchall():
-            yield x[0]
+            yield x
         
 database = MyDatabase(HOST, USER, PASS, DATABASE_NAME)
 cursor = database.myCursor
