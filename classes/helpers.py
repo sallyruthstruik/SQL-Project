@@ -4,7 +4,7 @@ import random as ran
 
 
 def Ecran(string):
-    string = string.replace("'", r"\'").replace('"', r'\"')
+    string = string.replace("'", r"\'").replace('"', r'\"').replace("\n", '')
     return string
 
 def Timer(f):

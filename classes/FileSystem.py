@@ -255,40 +255,7 @@ def ArrayInMemory(element = None):   #Статическая переменна�
         memory = memory[1:]
     return memory
 
-label = True    #Отвечает за выход из функции внесения в базу данных. InsertInto
-def threadDo():
-    global label
-    label = False
 
-
-def RunGeneratorDecorator(f):
-    def InsertInto():
-        memory = ArrayInMemory()
-        while label:
-            while len(memory)>0:
-            #try:
-                if len(memory)%1000 == 0:
-                    print len(memory)
-                try:
-                    element = memory[0]
-                except:
-                    continue
-                element.insertIntoDatabase()
-                memory = ArrayInMemory()
-            #except:
-                pass
-        database.commit()
-    
-    def _inside():
-        thread = Threading(InsertInto)()
-        x = Timer(f)()
-        print "Файлы собраны. Вношу в базу..."
-        thread.join()
-        return x
-    
-    return _inside
-        
-#@RunGeneratorDecorator
 def RunGenerator():
         folders_first=[ROOT_SNAPSHOT_FOLDER]
         folders_last=[]
@@ -324,7 +291,7 @@ def RunGenerator():
                     file = File(item)   # Создаем файл для пути
                     if file.type == "folder":   #Если файл - папка то 
                         folders_last.append(item)   #добавляем в дочерние папки
-                    #ArrayInMemory(file)
+
                     file.insertIntoDatabase()    #и пишем в базу данных
                 except BaseException as x:
                     print x
@@ -339,7 +306,7 @@ def RunGenerator():
             if not is_new:
                 layer = first_element[1]    #увеличиваем слой
                 print >>fd, "Removed elements "+str(last_files) #если в проверяемом слое остались файлы, значит мы что то удалили. При этом, все дочерние элементы данных также должны быть удалены.
-        threadDo() 
+
         return i    #Возвращаем число обработанных файлов.
         
     

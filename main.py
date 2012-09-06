@@ -2,6 +2,7 @@
 #-*- coding: utf-8 -*-
 from classes.FileSystem import *
 from classes.helpers import *
+import _mysql_exceptions
 
 
 def InsertFromFile():
@@ -16,7 +17,7 @@ def InsertFromFile():
                 print i
             try:
                 cursor.execute(line)
-            except:
+            except _mysql_exceptions.ProgrammingError:
                 pass
         
     database.commit()
