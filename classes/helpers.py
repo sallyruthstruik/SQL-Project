@@ -2,6 +2,11 @@ import time
 import threading as th
 import random as ran
 
+
+def Ecran(string):
+    string = string.replace("'", r"\'").replace('"', r'\"')
+    return string
+
 def Timer(f):
     def _inside(*a, **kw):
         start = time.time()

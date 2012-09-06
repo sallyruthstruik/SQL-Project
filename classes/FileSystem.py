@@ -62,7 +62,7 @@ def timeFromSeconds(t):
     return datetime.datetime(*time.localtime(time.time())[:6])
 
 
-
+fdquer = open("query.sql", "w")
 
 class File:
     color = "white"
@@ -85,13 +85,14 @@ class File:
     def insertIntoDatabase(self):
         query = "INSERT INTO File VALUES(%(id)s, '%(name)s', '%(path)s', '%(type)s', %(len)s);"%{
                                  "id": self.id,
-                                 "name": self.name,
-                                 "path": self.absolute_path,
+                                 "name": Ecran(self.name),
+                                 "path": Ecran(self.absolute_path),
                                  "type": self.type,
                                  'len': getPathLen(self.absolute_path)}
         #try:
-        cursor.execute(query)
-        #FileVersion(self).insertIntoDatabase()
+        print >> fdquer, query
+        #cursor.execute(query)
+        FileVersion(self).insertIntoDatabase()
         #except:
 
         
@@ -134,6 +135,7 @@ class Version:
 
 global_version = Version()
 global_version.insertIntoDatabase()
+SaveVersId()
 
 class FileVersion:
     def __init__(self, file):
@@ -152,20 +154,22 @@ class FileVersion:
     
     
     def insertIntoDatabase(self):
-        query1 = "INSERT INTO FileVersion VALUES(%(id)s, %(fid)s, %(vid)s)"%{
+        query1 = "INSERT INTO FileVersion VALUES(%(id)s, %(fid)s, %(vid)s);"%{
             'id': self.id,
             'fid': self.file.id,
             'vid': self.version.id
             }
-        cursor.execute(query1)
-        query2 = "INSERT INTO FileVersionAttr VALUES(%(fvid)s, '%(mtime)s', '%(latime)s', %(size)s, %(h)s)"%{
+        print>>fdquer, query1
+        #cursor.execute(query1)
+        query2 = "INSERT INTO FileVersionAttr VALUES(%(fvid)s, '%(mtime)s', '%(latime)s', %(size)s, %(h)s);"%{
             'fvid': self.id,
             'mtime': timeFromSeconds(self.modification_time),
             'latime': timeFromSeconds(self.la_time),
             'size': self.size,
             'h': self.is_hidden
             }
-        cursor.execute(query2)
+        print>>fdquer, query2
+        #cursor.execute(query2)
 
 
 #generator = database.getPathCursor() 
@@ -316,15 +320,14 @@ def RunGenerator():
                 else:
                     pass#print >>fd, item + " new!"  #Иначе файл - новый
                     
-                #try:
-                if True:
+                try:
                     file = File(item)   # Создаем файл для пути
                     if file.type == "folder":   #Если файл - папка то 
                         folders_last.append(item)   #добавляем в дочерние папки
                     ArrayInMemory(file)
                     #file.insertIntoDatabase()    #и пишем в базу данных
-                #except BaseException as x:
-                #    print x
+                except BaseException as x:
+                    print x
                     
             
             if len(folders_last) == 0:  #если дочерних папок не осталось
