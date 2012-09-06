@@ -3,29 +3,40 @@
 from classes.FileSystem import *
 from classes.helpers import *
 
+
+def InsertFromFile():
+    database = MyDatabase(HOST, USER, PASS, DATABASE_NAME)
+    cursor = database.myCursor
+
+    with open("query.sql") as fd:
+        i=0
+        for line in fd:
+            i+=1
+            if i%10000 == 0:
+                print i
+            try:
+                cursor.execute(line)
+            except:
+                pass
+        
+    database.commit()
+    
+    
+
 def main():
     
     print Timer(RunGenerator)()
     
     SaveFileId()
     SaveFVId()
+    print "main ok. Inserting..."
+    database.close()
+    Timer(InsertFromFile)()
+    
 
 
 main()
-print "main ok"
-
-database.close()
-database = MyDatabase(HOST, USER, PASS, DATABASE_NAME)
-cursor = database.myCursor
-
-with open("query.sql") as fd:
-    for line in fd:
-        try:
-            cursor.execute(line)
-        except:
-            pass
-        
-database.commit()
+#print "Hello!"
 
 #print "Привет!"
 #Folder(ROOT_SNAPSHOT_FOLDER).Run()

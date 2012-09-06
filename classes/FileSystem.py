@@ -288,7 +288,7 @@ def RunGeneratorDecorator(f):
     
     return _inside
         
-@RunGeneratorDecorator
+#@RunGeneratorDecorator
 def RunGenerator():
         folders_first=[ROOT_SNAPSHOT_FOLDER]
         folders_last=[]
@@ -324,8 +324,8 @@ def RunGenerator():
                     file = File(item)   # Создаем файл для пути
                     if file.type == "folder":   #Если файл - папка то 
                         folders_last.append(item)   #добавляем в дочерние папки
-                    ArrayInMemory(file)
-                    #file.insertIntoDatabase()    #и пишем в базу данных
+                    #ArrayInMemory(file)
+                    file.insertIntoDatabase()    #и пишем в базу данных
                 except BaseException as x:
                     print x
                     
