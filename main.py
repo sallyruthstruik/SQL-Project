@@ -26,6 +26,9 @@ def InsertFromFile():
 
 def main():
     
+    global_version = Version()
+    global_version.insertIntoDatabase()
+    SaveVersId()
     print Timer(RunGenerator)()
     
     SaveFileId()
@@ -36,7 +39,8 @@ def main():
     
 
 
-main()
+#main()
+RunGenerator2()
 #print "Hello!"
 
 #print "Привет!"

@@ -42,24 +42,9 @@ def SaveFVId():
     x.value = GetFVId()
     x.insertIntoDatabase()
 
-def getType(s):
-    
-    if os.path.islink(s):
-        return "link"
-    elif os.path.ismount(s):
-        return "mount"
-    elif os.path.isdir(s):
-        return "folder"
-    elif os.path.isfile(s):
-        return "file"
-    else:
-        return "unexpected"
-    
-def getPathLen(path):
-    return len(path.split("/"))
 
-def timeFromSeconds(t):
-    return datetime.datetime(*time.localtime(time.time())[:6])
+    
+
 
 
 fdquer = open("query.sql", "w")
@@ -100,18 +85,31 @@ class File:
         return self.absolute_path +" "+ self.name+ " "
 
 
-def getSliceFSGenerator(arr=[ROOT_SNAPSHOT_FOLDER]):
+def getLayerChildren(arr=[ROOT_SNAPSHOT_FOLDER]):
     """
         Генератор.
-        Возвращает адреса всеx папок, являющихся прямыми потомками папок, указанных в arr
+        Возвращает массив всеx папок, являющихся прямыми потомками папок, указанных в arr
         """
+    returning = []
     for item in arr:
-        folder = Folder(item)
+        try:
+            folder = Folder(item)
+        except:
+            continue
         try:
             for x in os.listdir(folder.absolute_path):
-                yield os.path.join(item, x)
+                returning.append(os.path.join(item, x))
         except:
             pass
+    return returning
+        
+def getFSLayer(number):
+    i=0
+    children = [ROOT_SNAPSHOT_FOLDER]
+    while i<number:
+        children = getLayerChildren(children)
+        i+=1
+    return children
 
 
 class Version:
@@ -133,9 +131,6 @@ class Version:
         cursor.execute(query)
         database.commit()
 
-global_version = Version()
-global_version.insertIntoDatabase()
-SaveVersId()
 
 class FileVersion:
     def __init__(self, file):
@@ -176,64 +171,13 @@ class FileVersion:
 #next_object = generator.next()
 fd = open("test", 'w')
 
-def SeeTwoArray(arr1, arr2):
-    """
-        returns (a,b) where a - elements from arr1 and not in arr2 and 
-        b - elements from arr2 and not in arr1"""
-    common_elements=[]
-    for item in arr1:
-        if item in arr2:
-            common_elements.append(item)
-            
-    returning = [[],[]]
-    
-    for item in arr1:
-        if item not in common_elements:
-            returning[0].append(item)
-            
-    for item in arr2:
-        if item not in common_elements:
-            returning[1].append(item)
-    
-    return returning
-    
+
 
 class Folder(File):
     def __init__(self, path):
         if not os.path.isdir(path):
             raise ValueError("not folder")
         File.__init__(self, path)
-    
-    
-#    def Run(self):
-#        global next_object
-#        #if Get("count_files_cur")%SET_PRINTING_INTERVAL == 0:
-#        #    print "Now "+str(Get("count_files_cur")) + " from "+str(Get("count_files"))
-#        files =[]
-#        folders = []
-#        for item in os.listdir(self.absolute_path):
-#            new_path = self.absolute_path + '/' + item
-#            if getType(new_path) == 'folder':
-#                try:
-#                    folders.append(Folder(new_path))
-#                except ValueError:
-#                    pass
-#            else:
-#                try:
-#                    files.append(File(new_path))
-#                except ValueError:
-#                    pass
-#            Inc("count_files_cur")
-#        
-#        
-#        for item in files+folders:
-#            item.insertIntoDatabase()
-#
-#        for item in folders:
-#            try:
-#                item.Run()
-#            except OSError:
-#                print "Permission denied on " + item.absolute_path
             
     def childCount(self):
         for item in os.listdir(self.absolute_path):
@@ -247,70 +191,85 @@ class Folder(File):
             Inc("count_files")
         self.child_count = Get("count_files")
 
-memory = []
-def ArrayInMemory(element = None):   #Статическая переменная memory хранит файлы, которые надо обработать
-    global memory
-    if element: memory.append(element)
-    else:
-        memory = memory[1:]
-    return memory
-
-
-def RunGenerator():
-        folders_first=[ROOT_SNAPSHOT_FOLDER]
-        folders_last=[]
-        i=0
-        generator = database.getPathCursor()    #Получаем список путей из базы данных
-        is_new = False  #По умолчанию дамп не новый
-        try:
-            first_element = generator.next()
-            layer = int(first_element[1])
-        except:
-            is_new = True   #Если список путей пуст - значит дамп новый.
-            
-        print is_new
-        labelquit = True    #Отвечает за выход из главного цикла
-        while labelquit:     #Пока есть слои  
-            last_files = []     #Файлы из базы из текущего слоя
-            if not is_new:
-                while layer == first_element[1]:     #пока номер слоя совпадает с номером слоя файла из генератора, сохраняем этот файл 
-                    last_files.append(first_element[0])
-                    try:
-                        first_element = generator.next()
-                    except StopIteration:
-                        break
-                
-            for item in getSliceFSGenerator(folders_first):     #для каждого элемента в текущем слое
-                i+=1  
-                if item in last_files:  #Если этот элемент есть в базе значит ФАЙЛ не изменился. Удаляем из рассмотрения
-                    last_files.remove(item) 
-                else:
-                    pass#print >>fd, item + " new!"  #Иначе файл - новый
-                    
-                try:
-                    file = File(item)   # Создаем файл для пути
-                    if file.type == "folder":   #Если файл - папка то 
-                        folders_last.append(item)   #добавляем в дочерние папки
-
-                    file.insertIntoDatabase()    #и пишем в базу данных
-                except BaseException as x:
-                    print x
-                    
-            
-            if len(folders_last) == 0:  #если дочерних папок не осталось
-                labelquit = False   #выходим из цикла
-            else:
-                folders_first = folders_last[:] #иначе меняем местами исходные и дочерние папки и идем в начало цикла
-                folders_last = []
-            
-            if not is_new:
-                layer = first_element[1]    #увеличиваем слой
-                print >>fd, "Removed elements "+str(last_files) #если в проверяемом слое остались файлы, значит мы что то удалили. При этом, все дочерние элементы данных также должны быть удалены.
-
-        return i    #Возвращаем число обработанных файлов.
+def RunGenerator2(database = database):
+    i=1
+    current_database_layer = database.getLayer(i)
+    current_files_layer = getFSLayer(i)
+    while len(current_database_layer)>0 or len(current_files_layer)>0:
+        strange_elements = SeeDifferentsInTwoArray(current_database_layer, current_files_layer)
+        print current_database_layer
+        print current_files_layer
+        print strange_elements
+        print ''
+        for x in strange_elements[0]:
+            print x+" удален"
+        for x in strange_elements[1]:
+            print x+" добавлен"
+        
+        i+=1
+        current_database_layer = database.getLayer(i)
+        current_files_layer = getFSLayer(i)
+        
+        
+        
         
     
-    
+
+#def RunGenerator():
+#        folders_first=[ROOT_SNAPSHOT_FOLDER]
+#        folders_last=[]
+#        i=0
+#        generator = database.getPathCursor()    #Получаем список путей из базы данных
+#        is_new = False  #По умолчанию дамп не новый
+#        try:
+#            first_element = generator.next()
+#            layer = int(first_element[1])
+#        except:
+#            is_new = True   #Если список путей пуст - значит дамп новый.
+#            
+#        print is_new
+#        labelquit = True    #Отвечает за выход из главного цикла
+#        while labelquit:     #Пока есть слои  
+#            last_files = []     #Файлы из базы из текущего слоя
+#            if not is_new:
+#                while layer == first_element[1]:     #пока номер слоя совпадает с номером слоя файла из генератора, сохраняем этот файл 
+#                    last_files.append(first_element[0])
+#                    try:
+#                        first_element = generator.next()
+#                    except StopIteration:
+#                        break
+#                
+#            for item in getSliceFSGenerator(folders_first):     #для каждого элемента в текущем слое
+#                i+=1  
+#                if item in last_files:  #Если этот элемент есть в базе значит ФАЙЛ не изменился. Удаляем из рассмотрения
+#                    last_files.remove(item) 
+#                else:
+#                    pass#print >>fd, item + " new!"  #Иначе файл - новый
+#                    
+#                try:
+#                    file = File(item)   # Создаем файл для пути
+#                    if file.type == "folder":   #Если файл - папка то 
+#                        folders_last.append(item)   #добавляем в дочерние папки
+#
+#                    file.insertIntoDatabase()    #и пишем в базу данных
+#                except BaseException as x:
+#                    print x
+#                    
+#            
+#            if len(folders_last) == 0:  #если дочерних папок не осталось
+#                labelquit = False   #выходим из цикла
+#            else:
+#                folders_first = folders_last[:] #иначе меняем местами исходные и дочерние папки и идем в начало цикла
+#                folders_last = []
+#            
+#            if not is_new:
+#                layer = first_element[1]    #увеличиваем слой
+#                print >>fd, "Removed elements "+str(last_files) #если в проверяемом слое остались файлы, значит мы что то удалили. При этом, все дочерние элементы данных также должны быть удалены.
+#
+#        return i    #Возвращаем число обработанных файлов.
+#        
+#    
+#    
     
     
     
