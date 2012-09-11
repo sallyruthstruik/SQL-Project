@@ -8,7 +8,10 @@ from classes.globals import *
 from classes.helpers import *
 
 
+
 version_id = int(Config("max_v_id").value)+2
+with open("query.sql", "w") as fdquer:
+    print>>fdquer, ''
 
 def IncVersId():
     global version_id
@@ -47,7 +50,7 @@ def SaveFVId():
 
 
 
-fdquer = open("query.sql", "w")
+
 
 class File:
     color = "white"
@@ -75,7 +78,8 @@ class File:
                                  "type": self.type,
                                  'len': getPathLen(self.absolute_path)}
         #try:
-        print >> fdquer, query
+        with open("query.sql", "a") as fdquer:
+            print >> fdquer, query
         #cursor.execute(query)
         FileVersion(self).insertIntoDatabase()
         #except:
@@ -154,7 +158,9 @@ class FileVersion:
             'fid': self.file.id,
             'vid': self.version.id
             }
-        print>>fdquer, query1
+        
+        with open("query.sql", "a") as fdquer:
+            print>>fdquer, query1
         #cursor.execute(query1)
         query2 = "INSERT INTO FileVersionAttr VALUES(%(fvid)s, '%(mtime)s', '%(latime)s', %(size)s, %(h)s);"%{
             'fvid': self.id,
@@ -163,14 +169,17 @@ class FileVersion:
             'size': self.size,
             'h': self.is_hidden
             }
-        print>>fdquer, query2
+        with open("query.sql", "a") as fdquer:
+            print>>fdquer, query2
         #cursor.execute(query2)
 
 
 #generator = database.getPathCursor() 
 #next_object = generator.next()
 fd = open("test", 'w')
-
+#global_version = Version()
+#global_version.insertIntoDatabase()
+#SaveVersId()
 
 
 class Folder(File):
@@ -197,15 +206,16 @@ def RunGenerator2(database = database):
     current_files_layer = getFSLayer(i)
     while len(current_database_layer)>0 or len(current_files_layer)>0:
         strange_elements = SeeDifferentsInTwoArray(current_database_layer, current_files_layer)
-        print current_database_layer
-        print current_files_layer
-        print strange_elements
-        print ''
+        print "I`m in layer " + str(i)
         for x in strange_elements[0]:
             print x+" удален"
+            pass
         for x in strange_elements[1]:
             print x+" добавлен"
-        
+            try:
+                File(x).insertIntoDatabase()
+            except:
+                pass
         i+=1
         current_database_layer = database.getLayer(i)
         current_files_layer = getFSLayer(i)

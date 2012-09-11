@@ -11,8 +11,9 @@ def Timer(f):
     def _inside(*a, **kw):
         start = time.time()
         x = f(*a, **kw)
-        print "Working "+str(time.time()-start)
-        return x
+        t = str(time.time()-start)
+        print "Working "+t
+        return [x, t]
     return _inside
 
 def Threading(f):

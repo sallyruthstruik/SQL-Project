@@ -17,8 +17,9 @@ def InsertFromFile():
                 print i
             try:
                 cursor.execute(line)
-            except _mysql_exceptions.ProgrammingError:
-                pass
+            except BaseException as x:
+                print "\n---------------------------------------\n"+line+"\n-------------------------------------\n"
+                print x
         
     database.commit()
     
@@ -26,10 +27,7 @@ def InsertFromFile():
 
 def main():
     
-    global_version = Version()
-    global_version.insertIntoDatabase()
-    SaveVersId()
-    print Timer(RunGenerator)()
+    RunGenerator2()
     
     SaveFileId()
     SaveFVId()
@@ -40,8 +38,17 @@ def main():
 
 
 #main()
-RunGenerator2()
 #print "Hello!"
+def test():
+    with open("tests", 'w') as fd:
+        print>>fd,''
 
-#print "Привет!"
+    with open("tests", 'a') as fd:
+        for i in range(11):
+            x =  Timer(getFSLayer)(i)
+            print >> fd, str(i), len(x[0]), x[1]
+            print "test "+str(i)+" doing"
+        
+main()
+#print "Привет!"##
 #Folder(ROOT_SNAPSHOT_FOLDER).Run()

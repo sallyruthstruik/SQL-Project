@@ -28,7 +28,10 @@ class MyDatabase(connection.Connection):
     def getLayer(self, number):
         i=0
         generator = self.getPathCursor()
-        prefix_length = self.getFirstPathLength()
+        try:
+            prefix_length = self.getFirstPathLength()
+        except:
+            prefix_length = 0
         output_layer = []
         while True:
             try:
