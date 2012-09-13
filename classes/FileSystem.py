@@ -88,32 +88,92 @@ class File:
     def __str__(self):
         return self.absolute_path +" "+ self.name+ " "
 
-
-def getLayerChildren(arr=[ROOT_SNAPSHOT_FOLDER]):
+memory_past = "fs_layer_memory_1"
+memory_next = "fs_layer_memory_2"
+def getLayerChildren():
     """
-        Генератор.
-        Возвращает массив всеx папок, являющихся прямыми потомками папок, указанных в arr
+        Пишет потомков папок, указанных в memory_past в memory_next
         """
-    returning = []
+    global memory_past, memory_next
+    if not os.path.exists(memory_past):
+        with open(memory_past, 'w') as fd:
+            pass
+    
+    with open(memory_next, 'w') as fd:
+            pass
+        
+    arr = []
+    with open(memory_past, 'r') as fd:
+        for x in fd:
+            arr.append(x[:-1])
+    if len(arr) == 0:
+        arr = [ROOT_SNAPSHOT_FOLDER]
+
     for item in arr:
         try:
             folder = Folder(item)
-        except:
+        except ValueError as x:
+            #print item + " not folder"
             continue
+
         try:
             for x in os.listdir(folder.absolute_path):
-                returning.append(os.path.join(item, x))
-        except:
+                with open(memory_next, 'a') as fd:
+                    print >> fd, os.path.join(item, x)
+        except OSError:
+            print "permission denied on "+item
             pass
+    temp = memory_next
+    memory_next = memory_past
+    memory_past = temp
+
+last = 0
+last_result = (ROOT_SNAPSHOT_FOLDER)
+def getFSLayer2(i):
+    global last, last_result
+    while last<i:
+        getLayerChildren()
+        last+=1
+    return open(memory_past, 'r')
+    
+with open("files_for_fs_recursive", 'w'):
+    pass
+
+count = 0
+
+def getFSLayerRecursive(root = ROOT_SNAPSHOT_FOLDER, len=getPathLen(ROOT_SNAPSHOT_FOLDER)):
+    global count
+    len = len+1
+    with open("files_for_fs_recursive", "a") as fd:
+        for x in os.listdir(root):
+            count +=1
+            try:
+                folder = Folder(os.path.join(root,x))
+                print >>fd, folder.absolute_path, len
+                getFSLayerRecursive(folder.absolute_path, len) 
+            except BaseException as x:
+                pass
+    return count
+
+refresh = True
+def getFSLayer3(i):
+    global refresh
+    if refresh:
+        getFSLayerRecursive()
+        refresh = False
+    returning = []
+    with open("files_for_fs_recursive", "r") as fd:
+        for line in fd:
+            x = line.split()
+            if x[1] == str(i):
+                returning.append(x[0])
     return returning
-        
-def getFSLayer(number):
-    i=0
-    children = [ROOT_SNAPSHOT_FOLDER]
-    while i<number:
-        children = getLayerChildren(children)
-        i+=1
-    return children
+    
+    
+            
+            
+            
+    
 
 
 class Version:
@@ -203,7 +263,8 @@ class Folder(File):
 def RunGenerator2(database = database):
     i=1
     current_database_layer = database.getLayer(i)
-    current_files_layer = getFSLayer(i)
+    files_layer_generator = getFSLayerGenerator()
+    current_files_layer = files_layer_generator.next()
     while len(current_database_layer)>0 or len(current_files_layer)>0:
         strange_elements = SeeDifferentsInTwoArray(current_database_layer, current_files_layer)
         print "I`m in layer " + str(i)
@@ -218,7 +279,7 @@ def RunGenerator2(database = database):
                 pass
         i+=1
         current_database_layer = database.getLayer(i)
-        current_files_layer = getFSLayer(i)
+    current_files_layer = files_layer_generator.next()
         
         
         

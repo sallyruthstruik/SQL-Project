@@ -39,16 +39,44 @@ def main():
 
 #main()
 #print "Hello!"
-def test():
+def test(f=None):
+    def lens(fd):
+        i=0
+        for x in fd:
+            i+=1
+        return i
     with open("tests", 'w') as fd:
         print>>fd,''
 
-    with open("tests", 'a') as fd:
-        for i in range(11):
-            x =  Timer(getFSLayer)(i)
-            print >> fd, str(i), len(x[0]), x[1]
-            print "test "+str(i)+" doing"
+    for i in range(11):
+        with open("tests", 'a') as fd:
+            x =  Timer(getFSLayer2)(i)
+            print >> fd,  str(i), lens(x[0]), x[1]
+            #print "test "+str(i)+" doing"
         
-main()
+#main()
+with open(memory_past, 'w') as fd:
+    pass
+    
+with open(memory_next, 'w') as fd:
+    pass
+#test()
+print "Hello"
+def printing(resp):
+    return str(resp[0])+" "+str(resp[1])
+
+"""tester(
+    getFSLayerRecursive,
+    [
+     [["/home/stas/workspace/Dudu.com"], {}],
+     [["/home/stas/workspace/SQL Project"], {}],
+     [["/home/stas/workspace"], {}],
+     [["/home/stas/Изображения"], {}],
+     [["/home/stas/.config"],{}],
+     [["/home/stas"], {}]
+     ],
+    printing
+       )"""
+print getFSLayerRecursive()
 #print "Привет!"##
 #Folder(ROOT_SNAPSHOT_FOLDER).Run()
