@@ -27,7 +27,7 @@ def InsertFromFile():
 
 def main():
     
-    RunGenerator2()
+    Timer(RunGenerator2)()
     
     SaveFileId()
     SaveFVId()
@@ -54,29 +54,8 @@ def test(f=None):
             print >> fd,  str(i), lens(x[0]), x[1]
             #print "test "+str(i)+" doing"
         
-#main()
-with open(memory_past, 'w') as fd:
-    pass
-    
-with open(memory_next, 'w') as fd:
-    pass
-#test()
-print "Hello"
-def printing(resp):
-    return str(resp[0])+" "+str(resp[1])
+main()
 
-"""tester(
-    getFSLayerRecursive,
-    [
-     [["/home/stas/workspace/Dudu.com"], {}],
-     [["/home/stas/workspace/SQL Project"], {}],
-     [["/home/stas/workspace"], {}],
-     [["/home/stas/Изображения"], {}],
-     [["/home/stas/.config"],{}],
-     [["/home/stas"], {}]
-     ],
-    printing
-       )"""
-print getFSLayerRecursive()
-#print "Привет!"##
-#Folder(ROOT_SNAPSHOT_FOLDER).Run()
+
+
+

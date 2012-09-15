@@ -136,37 +136,60 @@ def getFSLayer2(i):
         last+=1
     return open(memory_past, 'r')
     
-with open("files_for_fs_recursive", 'w'):
-    pass
+
 
 count = 0
 
-def getFSLayerRecursive(root = ROOT_SNAPSHOT_FOLDER, len=getPathLen(ROOT_SNAPSHOT_FOLDER)):
-    global count
-    len = len+1
+
+label = True
+def getFSLayerRecursive(root = ROOT_SNAPSHOT_FOLDER, len=getPathLen(ROOT_SNAPSHOT_FOLDER)+1):
+    global count, label
+    if label:
+        with open("files_for_fs_recursive", 'w'):
+            pass
+        label = False
+        
     with open("files_for_fs_recursive", "a") as fd:
         for x in os.listdir(root):
             count +=1
+            folder = File(os.path.join(root, x))
+            print >>fd, folder.absolute_path, len
+            if folder.type != "folder" and folder.type != "mount":
+                continue
             try:
-                folder = Folder(os.path.join(root,x))
-                print >>fd, folder.absolute_path, len
-                getFSLayerRecursive(folder.absolute_path, len) 
-            except BaseException as x:
-                pass
+                getFSLayerRecursive(folder.absolute_path, len+1)
+            except BaseException as y:
+                print y
     return count
 
 refresh = True
+min_layer = getPathLen(ROOT_SNAPSHOT_FOLDER)
+print min_layer
+import re
 def getFSLayer3(i):
+    i = i+min_layer
     global refresh
     if refresh:
-        getFSLayerRecursive()
+        print "Получаю дерево файлов..."
+        c = getFSLayerRecursive()
+        print "Получено "+str(c)
         refresh = False
     returning = []
+    l = 0
+    z=0
     with open("files_for_fs_recursive", "r") as fd:
         for line in fd:
-            x = line.split()
-            if x[1] == str(i):
+            l+=1
+            try:            
+                x = re.compile("^(.+) (\d+)$").findall(line)[0]
+                element = x[1]
+            except:
+                print "Error in line " + str(l)
+                continue
+            if element == str(i):
+                z+=1
                 returning.append(x[0])
+        print "Обработано",l, "строк", z, "внесено" 
     return returning
     
     
@@ -237,16 +260,18 @@ class FileVersion:
 #generator = database.getPathCursor() 
 #next_object = generator.next()
 fd = open("test", 'w')
-#global_version = Version()
-#global_version.insertIntoDatabase()
-#SaveVersId()
+global_version = Version()
+global_version.insertIntoDatabase()
+SaveVersId()
 
 
 class Folder(File):
     def __init__(self, path):
-        if not os.path.isdir(path):
-            raise ValueError("not folder")
-        File.__init__(self, path)
+        x = File(path)
+        if x.type == "folder" or x.type == "mount":
+            File.__init__(self, path)
+        
+        
             
     def childCount(self):
         for item in os.listdir(self.absolute_path):
@@ -260,11 +285,12 @@ class Folder(File):
             Inc("count_files")
         self.child_count = Get("count_files")
 
+added_count = 0
 def RunGenerator2(database = database):
+    global added_count
     i=1
     current_database_layer = database.getLayer(i)
-    files_layer_generator = getFSLayerGenerator()
-    current_files_layer = files_layer_generator.next()
+    current_files_layer = getFSLayer3(i)
     while len(current_database_layer)>0 or len(current_files_layer)>0:
         strange_elements = SeeDifferentsInTwoArray(current_database_layer, current_files_layer)
         print "I`m in layer " + str(i)
@@ -273,14 +299,16 @@ def RunGenerator2(database = database):
             pass
         for x in strange_elements[1]:
             print x+" добавлен"
+            added_count+=1
             try:
                 File(x).insertIntoDatabase()
             except:
                 pass
         i+=1
         current_database_layer = database.getLayer(i)
-    current_files_layer = files_layer_generator.next()
-        
+        current_files_layer = getFSLayer3(i)
+    
+    print "Добавлено", added_count
         
         
         
