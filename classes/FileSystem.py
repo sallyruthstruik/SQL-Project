@@ -6,7 +6,7 @@ import time
 from classes.Connection import *
 from classes.globals import *
 from classes.helpers import *
-
+import codecs
 
 
 version_id = int(Config("max_v_id").value)+2
@@ -120,6 +120,8 @@ def getLayerChildren():
             for x in os.listdir(folder.absolute_path):
                 with open(memory_next, 'a') as fd:
                     print >> fd, os.path.join(item, x)
+        except AttributeError:
+            continue
         except OSError:
             print "permission denied on "+item
             pass
@@ -142,22 +144,23 @@ count = 0
 
 
 label = True
-def getFSLayerRecursive(root = ROOT_SNAPSHOT_FOLDER, len=getPathLen(ROOT_SNAPSHOT_FOLDER)+1):
+def getFSLayerRecursive(root = ROOT_SNAPSHOT_FOLDER, leng=getPathLen(ROOT_SNAPSHOT_FOLDER)+1):
     global count, label
     if label:
         with open("files_for_fs_recursive", 'w'):
             pass
         label = False
         
-    with open("files_for_fs_recursive", "a") as fd:
+    with codecs.open("files_for_fs_recursive", "a", "utf-8") as fd:
         for x in os.listdir(root):
             count +=1
             folder = File(os.path.join(root, x))
-            print >>fd, folder.absolute_path, len
+            if len(str(folder.absolute_path))>0:
+                print >>fd, folder.absolute_path+" "+str(leng)
             if folder.type != "folder" and folder.type != "mount":
                 continue
             try:
-                getFSLayerRecursive(folder.absolute_path, len+1)
+                getFSLayerRecursive(folder.absolute_path, leng+1)
             except BaseException as y:
                 print y
     return count
@@ -166,6 +169,7 @@ refresh = True
 min_layer = getPathLen(ROOT_SNAPSHOT_FOLDER)
 print min_layer
 import re
+patt = re.compile("^(.+) (\d+)$")
 def getFSLayer3(i):
     i = i+min_layer
     global refresh
@@ -181,10 +185,10 @@ def getFSLayer3(i):
         for line in fd:
             l+=1
             try:            
-                x = re.compile("^(.+) (\d+)$").findall(line)[0]
+                x = patt.findall(line)[0]
                 element = x[1]
             except:
-                print "Error in line " + str(l)
+                print "Error in line", l, "(", line, ")"
                 continue
             if element == str(i):
                 z+=1
@@ -260,9 +264,9 @@ class FileVersion:
 #generator = database.getPathCursor() 
 #next_object = generator.next()
 fd = open("test", 'w')
-global_version = Version()
-global_version.insertIntoDatabase()
-SaveVersId()
+#global_version = Version()
+#global_version.insertIntoDatabase()
+#SaveVersId()
 
 
 class Folder(File):
@@ -300,10 +304,12 @@ def RunGenerator2(database = database):
         for x in strange_elements[1]:
             print x+" добавлен"
             added_count+=1
-            try:
-                File(x).insertIntoDatabase()
-            except:
-                pass
+#            try:
+#                File(x).insertIntoDatabase()
+#            except BaseException as y:
+#                print y, x
+#                input()
+                
         i+=1
         current_database_layer = database.getLayer(i)
         current_files_layer = getFSLayer3(i)
